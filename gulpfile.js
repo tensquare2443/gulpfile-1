@@ -8,16 +8,21 @@ var plumber = require('gulp-plumber');
 var sourcemaps = require('gulp-sourcemaps');
 var sass = require('gulp-sass');
 var babel = require('gulp-babel');
+var del = require('del');
+
+//Image compression
+var imagemin = require('gulp-imagemin');
+var imageminPngquant = require('imagemin-pngquant');
+var imageminJpegRecompress = require('imagemin-jpeg-recompress');
 
 //File paths
 var DIST_PATH = 'public/dist';
 var SCRIPTS_PATH = 'public/scripts/**/*.js';
 var CSS_PATH = 'public/css/**/*.css';
+var IMAGES_PATH = 'public/images/**/*.{png,jpeg,jpg,svg,gif}';
 
 // Styles (without scss)
 // gulp.task('styles', function() {
-//   console.log('starting styles task');
-//   //src takes a path or pattern to match files
 //   return gulp.src([
 //     'public/css/reset.css',
 //     CSS_PATH
@@ -37,8 +42,6 @@ var CSS_PATH = 'public/css/**/*.css';
 
 // Styles (with scss)
 gulp.task('styles', function() {
-  console.log('starting styles task');
-  //src takes a path or pattern to match files
   return gulp.src('public/scss/styles.scss')
     .pipe(plumber(function(err) {
       console.log('Styles Task Error');
@@ -57,8 +60,6 @@ gulp.task('styles', function() {
 
 // Scripts
 gulp.task('scripts', function() {
-  console.log('starting scripts task');
-
   return gulp.src(SCRIPTS_PATH)
     .pipe(plumber(function(err) {
       console.log('Scripts Task Error');
@@ -78,14 +79,31 @@ gulp.task('scripts', function() {
 
 // Images
 gulp.task('images', function() {
-  console.log('starting images task');
+  return gulp.src(IMAGES_PATH)
+    .pipe(imagemin(
+      [
+        imagemin.gifsicle(),
+        imagemin.jpegtran(),
+        imagemin.optipng(),
+        imagemin.svgo(),
+        imageminPngquant(),
+        imageminJpegRecompress()
+      ]
+    ))
+    .pipe(gulp.dest(DIST_PATH + '/images'));
 });
 
-gulp.task('default', function() {
+gulp.task('clean', function() {
+  return del.sync([
+    DIST_PATH
+  ]);
+});
+
+gulp.task('default', ['clean', 'images', 'styles', 'scripts'], function() {
   console.log('Starting default task');
 });
 
-gulp.task('watch', function() {
+gulp.task('watch', ['default'], function() {
   console.log('Starting watch task');
   require('./server.js');
   livereload.listen();
